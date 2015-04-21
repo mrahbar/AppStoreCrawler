@@ -1,0 +1,123 @@
+@()
+
+@main("App-Store crawler") {
+
+    <div style="width:600px; margin:0 auto;">
+        <table>
+            <tr>
+                <th>Enter app</th>
+                <th>Possible input</th>
+            </tr>
+            <tr>
+                <td>Apple App Store</td>
+                <td>https://itunes.apple.com/de/app/youtube/id544007664<br>youtube/id544007664</td>
+            </tr>
+            <tr>
+                <td>Google Play Store</td>
+                <td>https://play.google.com/store/apps/details?id=com.google.android.youtube<br>com.google.android.youtube</td>
+            </tr>
+        </table>
+
+        <br>
+        <input style="width:98%;" maxlength="200" id="app_id" type="text" value="https://play.google.com/store/apps/details?id=com.google.android.youtube"/>
+
+        <p style="width:100%;">
+            <input style="width:49%;" id="crawl_playstore" type="button" value="Google Play Store" />
+            <input style="width:49%;" id="crawl_apple" type="button" value="Apple App Store" />
+        </p>
+
+        <p >
+            <textarea  style="width:98%;"  cols="75" id="crawl_result" rows="30"></textarea>
+        </p>
+
+        <p >Rest call url</p>
+
+        <p >
+            <a href="#" maxlength="100" id="rest_url" type="text"></a>
+        </p>
+    </div>
+
+    <script type="text/javascript">
+
+        $("#crawl_playstore").click(function () {
+            var appUrl = $("#app_id").val();
+            console.log(appUrl);
+
+            jsRoutes.controllers.Application.crawlPlayStore(appUrl).ajax({
+                success : function(data) {
+                    $("#crawl_result").val(syntaxHighlight(JSON.stringify(data)));
+                    var route = jsRoutes.controllers.Application.crawlPlayStore(appUrl.replace("https://play.google.com/store/apps/details?id=", ""));
+                    var restUrl = route.absoluteURL();
+                    restUrl = restUrl.replace("http://playserver", "https://www.smartsoftwareagile.de");
+                    $("#rest_url").attr("href", restUrl).text(restUrl);
+                },
+                error : function(err) {
+                    $("#crawl_result").val(JSON.stringify(err));
+                    $("#rest_url").attr("href", "#").text("-");
+                }
+            });
+        });
+
+        $("#crawl_apple").click(function () {
+            var appUrl = $("#app_id").val();
+            console.log(appUrl);
+
+            jsRoutes.controllers.Application.crawlAppleStore(appUrl).ajax({
+                success : function(data) {
+                    $("#crawl_result").val(JSON.stringify(data));
+                    var route = jsRoutes.controllers.Application.crawlAppleStore(appUrl.replace("https://itunes.apple.com/de/app/",""));
+                    var restUrl = route.absoluteURL();
+                    restUrl = restUrl.replace("http://playserver", "https://www.smartsoftwareagile.de");
+                    $("#rest_url").attr("href", restUrl).text(restUrl);
+                },
+                error : function(err) {
+                     $("#crawl_result").val(JSON.stringify(err));
+                     $("#rest_url").attr("href", "#").text("-");
+                }
+            });
+        });
+
+        function space(len) {
+            var t = [], i;
+            for (i = 0; i < len; i++) {
+                t.push(' ');
+            }
+
+            return t.join('');
+        }
+
+        function syntaxHighlight(json) {
+            var text = json.replace(/\n/g, ' ').replace(/\r/g, ' ');
+            var t =[ ] ;
+            var tab = 0 ;
+            var inString = false ;
+
+            for (var i = 0, len = text.length ; i < len ; i ++ ) {
+                var c = text.charAt(i) ;
+                if (inString && c === inString) {
+                    // TODO: \\"
+                    if (text.charAt ( i - 1 ) !== '\\') {
+                        inString = false ;
+                    }
+                } else if ( ! inString && ( c === '"' || c === "'" ) ) {
+                    inString = c ;
+                } else if ( ! inString && ( c === ' ' || c === "\t" ) ) {
+                    c = '' ;
+                } else if ( ! inString && c === ':' ) {
+                    c += ' ' ;
+                } else if ( ! inString && c === ',' ) {
+                    c += "\n" + space ( tab * 2 ) ;
+                } else if ( ! inString && ( c === '[' || c === '{' ) ) {
+                    tab ++ ;
+                    c += "\n" + space ( tab * 2 ) ;
+                } else if ( ! inString && ( c === ']' || c === '}' ) ) {
+                    tab -- ;
+                    c = "\n" + space ( tab * 2 ) + c ;
+                }
+                t.push(c);
+            }
+            return t.join ( '' ) ;
+        }
+    </script>
+
+}
